@@ -1,0 +1,16 @@
+{
+  "name": "tsm-renewal",
+  "version": "1.0.0",
+  "description": "TSM Glass Panel 自动登录续期工具",
+  "main": "renew.js",
+  "scripts": {
+    "start": "node renew.js",
+    "test": "node renew.js"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
