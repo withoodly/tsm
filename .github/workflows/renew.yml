@@ -1,0 +1,55 @@
+name: TSM Glass Panel 自动续期
+
+on:
+  schedule:
+    # 每5天执行一次：UTC 01:00 = 北京时间 09:00
+    # 选择每月 1/6/11/16/21/26 日运行（近似"每5天"）
+    - cron: '0 1 1,6,11,16,21,26 * *'
+  workflow_dispatch:   # 允许手动触发
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. 拉取代码 ──────────────────────────────────────────────────────────
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ── 2. 安装 Node.js ──────────────────────────────────────────────────────
+      - name: 安装 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. 安装依赖 ──────────────────────────────────────────────────────────
+      - name: 安装 npm 依赖
+        run: npm ci
+
+      # ── 4. 安装 Playwright 浏览器 ────────────────────────────────────────────
+      - name: 安装 Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      # ── 5. 创建截图目录 ──────────────────────────────────────────────────────
+      - name: 创建截图目录
+        run: mkdir -p screenshots
+
+      # ── 6. 执行续期脚本 ──────────────────────────────────────────────────────
+      - name: 执行续期脚本
+        env:
+          TSM_ACCOUNTS: ${{ secrets.TSM_ACCOUNTS }}
+          WXPUSHER_APP_TOKEN: ${{ secrets.WXPUSHER_APP_TOKEN }}
+          WXPUSHER_UIDS: ${{ secrets.WXPUSHER_UIDS }}
+        run: node renew.js
+
+      # ── 7. 上传截图（无论成败都上传）────────────────────────────────────────
+      - name: 上传截图 Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: screenshots/
+          retention-days: 14
+          if-no-files-found: warn
